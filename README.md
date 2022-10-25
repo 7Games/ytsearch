@@ -66,6 +66,14 @@ Enter video index: 2
 https://invidious.sevengames.xyz/watch?v=Ni3jcdDzvNQ
 ```
 
+You can use Environment Variables to change certain things.
+#### Change the Invidious instance
+```
+$ INVIDIOUS_INSTANCE="https://invidious.example.com" ytsearch OpenBSD 7.2
+```
+
+
+
 ### How to play videos with this program?
 To play a video you could either:-
 1. Take the ID from next to the video and play it using mpv
@@ -76,6 +84,7 @@ $ printf "Search: " && read -r input && ytsearch -i "$input" | tee /tmp/search &
 This command takes input from the user and uses it to search with then make the user enter the video index. Use the ```tee``` command to get the stdout of the program, then gets the last line of the stdout and make mpv play it.
 
 You could also use another script I made called [yt](https://github.com/7Games/yt).
+
 
 Made by [7Games](https://sevengames.xyz).<br>
 [LICENSE](https://github.com/7Games/ytsearch/blob/main/LICENSE)
