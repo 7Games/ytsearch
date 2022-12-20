@@ -42,8 +42,7 @@ To search for something add it to the end of the program when running it.
 ```
 $ ytsearch posix shell scripting
 BASH password strength checking script | Sean Paul Bryans | HbQIXI51AuE
-Posix shell script - Save multi line command output to variable | Roel Van de
-Paar | LDuPYJ35LtU
+Posix shell script - Save multi line command output to variable | Roel Van dePaar | LDuPYJ35LtU
 What is POSIX in Unix? Linux Terminal 201 - HakTip 161 | Hak5 | U0GbJtnfqSM
 ...
 ```
@@ -69,12 +68,12 @@ $ INVIDIOUS_INSTANCE="https://invidious.example.com" ytsearch OpenBSD 7.2
 To play a video you could either:-
 1. Take the ID from next to the video and play it using mpv
 2. Use this command
-      1. fzf
 ```
+#fzf
 $ printf "Search: " && read -r input && ytsearch "$input" | fzf | tail -c 12 | xargs -I % mpv "https://invidious.sevengames.xyz/watch?v=%"
+```      
 ```
-      2. dmenu
-```
+#dmenu
 $ input=$(printf "" | dmenu -p "Search: "); ytsearch "$input" | dmenu -l 30 | tail -c 12 | xargs -I % mpv "https://invidious.sevengames.xyz/watch?v=%"
 ```
 
