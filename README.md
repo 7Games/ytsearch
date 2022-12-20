@@ -31,12 +31,8 @@ $ make install_user
 The man page is not installed if you use the user install.
 #### 3. Run the program
 ```
-$ ytsearch -h
-ytsearch by 7Games (Benjamin) 	
-usage: ytsearch [-h, -i] [search] 	
-
- -i, --interact	prints full video URL based on user input 	
- -h, --help	displays this help and exit
+$ ytsearch
+usage: ytsearch [STRING]... 	
 ```
 
 ---------
@@ -45,25 +41,20 @@ usage: ytsearch [-h, -i] [search]
 To search for something add it to the end of the program when running it.
 ```
 $ ytsearch posix shell scripting
-Searching "posix shell scripting" using "https://invidious.sevengames.xyz"...
- [30] Shell Scripting for Humans (077): The single dash (minus) syntax (POSIX) (Jacob Salmela) [iGrDOpARc3U]
- [29] Shell Scripting Tutorial | Shell Scripting Crash Course | Linux Certification Training | Edureka (edureka!) [GtovwKDemnI]
- [28] Posix shell script - Save multi line command output to variable (Roel Van de Paar) [LDuPYJ35LtU]
- [27] [PLOS 2021] Files-as-Filesystems for POSIX Shell Data Processing (Michael Greenberg) [VIphHPBj9ms]
+BASH password strength checking script | Sean Paul Bryans | HbQIXI51AuE
+Posix shell script - Save multi line command output to variable | Roel Van de
+Paar | LDuPYJ35LtU
+What is POSIX in Unix? Linux Terminal 201 - HakTip 161 | Hak5 | U0GbJtnfqSM
 ...
 ```
 
-For user interaction put the ```-i```/```--interact``` argument directly after the program name. It will ask the user for the index of a video listed then print the full video URL to the terminal.
+To select an item use something similar to fzf or dmenu.
 ```
-$ ytsearch --interact rust in the linux kernel
+$ ytsearch rust in the linux kernel | dmenu -l 5
 ...
- [3] The Linux Kernel Gets Rusty - Jonathan Corbet, RUST and the Linux Kernal Development (FLOSS Weekly) [gVC1gp2PS8U]
- [2] Next Phase For Rust In The Linux Kernel (Brodie Robertson) [Ni3jcdDzvNQ]
- [1] Rust Is Going To Destroy The Linux Kernel!!! (Brodie Robertson) [FwXmv6b9614]
-
-Enter video index: 2
-
-https://invidious.sevengames.xyz/watch?v=Ni3jcdDzvNQ
+#AFTER SELECTING ITEM IN DMENU
+...
+What would a Rust-based Linux distro look like? | Systems with JT | aqExaoH2SFU
 ```
 
 You can use Environment Variables to change certain things.
@@ -78,13 +69,19 @@ $ INVIDIOUS_INSTANCE="https://invidious.example.com" ytsearch OpenBSD 7.2
 To play a video you could either:-
 1. Take the ID from next to the video and play it using mpv
 2. Use this command
+      1. fzf
 ```
-$ printf "Search: " && read -r input && ytsearch -i "$input" | tee /tmp/search && mpv $(tail -1 /tmp/search) && rm /tmp/search
+$ printf "Search: " && read -r input && ytsearch "$input" | fzf | tail -c 12 | xargs -I % mpv "https://invidious.sevengames.xyz/watch?v=%"
 ```
-This command takes input from the user and uses it to search with then make the user enter the video index. Use the ```tee``` command to get the stdout of the program, then gets the last line of the stdout and make mpv play it.
+      2. dmenu
+```
+$ input=$(printf "" | dmenu -p "Search: "); ytsearch "$input" | dmenu -l 30 | tail -c 12 | xargs -I % mpv "https://invidious.sevengames.xyz/watch?v=%"
+```
 
 You could also use another script I made called [yt](https://github.com/7Games/yt).
 
 
 Made by [7Games](https://sevengames.xyz).<br>
 [LICENSE](https://github.com/7Games/ytsearch/blob/main/LICENSE)
+
+

@@ -2,7 +2,6 @@
 
 # Gets the Invidious instance from a Environment var.
 INVIDIOUS_INSTANCE=$(printenv INVIDIOUS_INSTANCE)
-INTERACT=0
 SEARCH_TERM=""
 
 # If INVIDIOUS_INSTANCE is empty fill it with the default instance.
@@ -12,118 +11,48 @@ fi
 
 add_strings() {
 	for thing in "$@"; do
-		[ "${thing}" = "-i" ] && continue
-		[ "${thing}" = "--interact" ] && continue
-		SEARCH_TERM=${SEARCH_TERM}${thing}" "
+		SEARCH_TERM=${SEARCH_TERM}${thing}"+"
 	done
-	# Removes the last char off the string. In this case another '+'
-	SEARCH_TERM=${SEARCH_TERM%?}
-	SEARCH_TERM=$(echo "$SEARCH_TERM" | sed 's| |+|g')
-}
-
-# Displays the help and exits the program.
-print_help() {
-	printf "ytsearch by 7Games (Benjamin) \
-	\nusage: ytsearch [-h, -i] [search] \
-	\n\n -i, --interact\t prints full video URL based on user input \
-	\n -h, --help\t displays this help and exit\n"
-	exit
+	SEARCH_TERM="$(echo "$SEARCH_TERM" | sed 's/\ /+/g')"
 }
 
 print_videos() {
 	# Sets i to the length of the JSON file minus 1.
-	i=$(($(jq "length" /tmp/search.json) - 1))
+	i=$(($(echo "$1" | jq "length") - 1))
+
 	# While i is greater than -1.
 	while [ $i -gt -1 ]; do
-		# Get the title, video id, and author from the JSON file.
-		title=$(jq ".[$i].title" /tmp/search.json)	
-		id=$(jq ".[$i].videoId" /tmp/search.json)
-		author=$(jq ".[$i].author" /tmp/search.json)
+		# Get the title, video id, and author from the JSON file. Then strips them.
+		title=$(echo "$1" | jq ".[$i].title" | sed 's/\\\"/@QuOtE@/g' | sed 's/\"//g' | sed 's/@QuOtE@/\"/g')
+		id=$(echo "$1" | jq ".[$i].videoId" | sed 's/\"//g')
+		author=$(echo "$1" | jq ".[$i].author" | sed 's/\"//g')
 
-		# Strips the values.
-		title=$(echo "$title" | sed 's|\\\"|@QuOtE@|g' | sed 's|\"||g' | sed 's|@QuOtE@|\"|g')
-		author=$(echo "$author" | sed 's|\"||g')
-		id=$(echo "$id" | sed 's|\"||g')
-
+		# Check to make sure that the the result is a valid video.
 		# Takes the values and puts them in the corosponding files.
-		echo "$title" >> /tmp/videotitles
-		echo "$author" >> /tmp/videoauthors
-		echo "$id" >> /tmp/videoids
+		[ ! "$id" = "null" ] && printf "%s | %s | %s\n" "$title" "$author" "$id"
 
-		# Adds 1 to i.
 		i=$((i - 1))
 	done
-
-	# Sets i to the length of the JSON file minus 1.
-	i=$(($(jq "length" /tmp/search.json) - 1))
-	# While i is greater than -1.
-	while [ $i -gt -1 ]; do
-		# Sets the current index to i plus 1.
-		curI=$((i + 1))
-		
-		# Gets all the values by the current index from there files.
-		title=$(tail -n "$curI" /tmp/videotitles | head -1)
-		author=$(tail -n "$curI" /tmp/videoauthors | head -1)
-		id=$(tail -n "$curI" /tmp/videoids | head -1)
-		
-		# Prints all the values with special coloring.
-		printf " [%d] %s\033[0;35m (%s)\033[0;34m [%s]\033[0;0m\n" "$curI" "$title" "$author" "$id"
-		
-		# Adds 1 to i.
-		i=$((i - 1))
-	done
-	
-	# Removes all temp files.
-	rm /tmp/videotitles /tmp/videoauthors /tmp/videoids
 }
 
 # Searches for video.
 search_videos() {
-	if [ -f '/tmp/search.json' ]; then
-		rm /tmp/search.json
-	fi
-	printf "Searching \"%s\" using \"%s\"...\n" "$(echo "$SEARCH_TERM" | sed 's|+| |g')" "$INVIDIOUS_INSTANCE"
-	# Uses cURL to get the JSON file from the instance and puts it in a -
-	# temp JSON file.
-	curl -so /tmp/search.json "$INVIDIOUS_INSTANCE/api/v1/search?q=$1"
+	# Uses cURL to get the JSON file from the instance and puts it in a var.
+	search="$(curl -s "$INVIDIOUS_INSTANCE/api/v1/search?q=$1")"
+
+	echo "$search" | head -2 | tail -1 > /tmp/based
 
 	# Checks if there is an error.
-	if [ "$(grep '<head><title>429 Too Many Requests</title></head>' /tmp/search.json)" ]; then
-		rm /tmp/search.json
-		printf " \033[0;31m[ERROR]\033[0;0m API currently not available\n"
-		exit
-	fi
+	[ "$(echo "$search" | grep "<head><title>429 Too Many Requests</title></head>")" ] && printf "API not available\n" && exit
 
 	# Prints the videos.
-	print_videos
+	print_videos "$search"
 }
 
-# Prints the video URL based on its index in the temp JSON file.
-print_video_url() {
-	id=$(jq ".[$(($1 - 1))].videoId" /tmp/search.json)
-	id=$(echo "$id" | sed 's|\"||g')
-	printf "\n%s" "$INVIDIOUS_INSTANCE/watch?v=$id"
-}
-
-# If there is no argument print help.
-[ "$1" = "" ] && print_help
-# If there is an argument.
-case "$1" in
-	-i) INTERACT=1 ;;
-	--interact) INTERACT=1 ;;
-	-h) print_help ;;
-	--help) print_help ;;
-esac
-
-# Takes all the arguments and puts it in the add_strings function.
+# Takes all the arguments and combines them into the SEARCH_TERM var.
 add_strings "$@"
-# If there is no search term print help.
-[ "$SEARCH_TERM" = "" ] && print_help
-# Searches video with search term
-search_videos "$SEARCH_TERM"
-# If interact is true (1) then get user input and print the URL based -
-# off of it.
-[ "$INTERACT" = "1" ] && printf "\nEnter video index: " && read -r index && print_video_url "$index"
+# If there is no search term print help and exit.
+[ "$SEARCH_TERM" = "" ] && printf "usage: %s [STRING]...\n" "$(basename "$0")" && exit
 
-# Removes the temp file.
-rm /tmp/search.json
+search_videos "$SEARCH_TERM"
+

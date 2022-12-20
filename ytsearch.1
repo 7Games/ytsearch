@@ -6,13 +6,6 @@ yt \- Terminal YouTube searcher.
 [ARGUMENT] [SEARCH TERM]
 .SH DESCRIPTION
 ytsearch is a simple POSIX shell script that searches Invidious (https://invidious.io) using its API and displays it to standard output. For a script that plays a selected video check out yt (https://github.com/7Games/yt)
-.SH OPTIONS
-.TP
-.BR -i,\ --interact
-Lets the user input a number corosponding to the index of a video listed, it then takes that video and prints its full URL to standard output.
-.TP
-.BR -h,\ --help
-Shows the in built help screen then exits.
 .SH ENVIRONMENT VARIABLES
 .TP
 You can either put these either in your .profile / shell rc file or before the command.
@@ -24,19 +17,13 @@ The Invidious instance used to search using its API. Make sure that the instance
 .BR Search\ for\ video:
 $ ytsearch POSIX Shell Scripting
 .TP
-.BR Search\ and\ let\ the\ user\ select\ the\ video:
-$ ytsearch --interact Alternative Front Ends
-.TP
 .BR Change\ Invidious\ Instance:
 $ INVIDIOUS_INSTANCE="https://invidious.example.com" ytsearch
 .TP
-.BR Search\ and\ then\ play\ video.
-$ printf "Search: " && read -r input && ytsearch -i "$input" | tee /tmp/search && mpv $(tail -1 /tmp/search) && rm /tmp/search
+.BR Search\ and\ then\ play\ video\ using\ fzf.
+$ printf "Search: " && read -r input && ytsearch "$input" | fzf | xargs -I % mpv "https://invidious.sevengames.xyz/watch?v=%"
+.TP
+.BR Search\ and\ then\ play\ video\ using\ dmenu.
+$ search=$(printf "" | dmenu -p "Search: "); ytsearch "$search" | dmenu -l 30 -p "Select a video: " | tail -c 12 | xargs -I % mpv "https://invidious.sevengames.xyz/watch?v=%"
 .SH SEE ALSO
-.BR yt (1),
-.BR mpv (1),
-.BR tee (1),
-.BR printf (1),
-.BR read (1),
-.BR tail (1),
-.BR rm (1)
+.BR yt (1)
