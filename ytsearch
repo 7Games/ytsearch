@@ -40,8 +40,6 @@ search_videos() {
 	# Uses cURL to get the JSON file from the instance and puts it in a var.
 	search="$(curl -s "$INVIDIOUS_INSTANCE/api/v1/search?q=$1")"
 
-	echo "$search" | head -2 | tail -1 > /tmp/based
-
 	# Checks if there is an error.
 	[ "$(echo "$search" | grep "<head><title>429 Too Many Requests</title></head>")" ] && printf "API not available\n" && exit
 
